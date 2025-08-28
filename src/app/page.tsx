@@ -52,7 +52,7 @@ export default function Home() {
             <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Get Started</h2>
               <p className="text-gray-600 mb-6">
-                Sign in to test the authentication system. Recording features are coming soon!
+                Sign in with GitHub or Google to test the authentication system. Recording features are coming soon!
               </p>
               <AuthButton />
               

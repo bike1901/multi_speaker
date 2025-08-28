@@ -2,13 +2,15 @@
 
 import { createClient } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import type { Tables } from '@/types/database'
+import type { User } from '@supabase/supabase-js'
 
 export default function TestDbPage() {
   const [rooms, setRooms] = useState<Tables<'rooms'>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function TestDbPage() {
         } else {
           setRooms(data || [])
         }
-      } catch (err) {
+      } catch {
         setError('Failed to fetch rooms')
       } finally {
         setLoading(false)
@@ -47,7 +49,7 @@ export default function TestDbPage() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('rooms')
         .insert([
           {
@@ -67,7 +69,7 @@ export default function TestDbPage() {
           .order('created_at', { ascending: false })
         setRooms(rooms || [])
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create room')
     }
   }
@@ -134,12 +136,12 @@ export default function TestDbPage() {
           </div>
 
           <div className="pt-4 border-t">
-            <a 
+            <Link 
               href="/"
               className="text-blue-500 hover:text-blue-600"
             >
               ← Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </div>
