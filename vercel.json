@@ -1,0 +1,18 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "LIVEKIT_API_KEY": "@livekit_api_key",
+    "LIVEKIT_API_SECRET": "@livekit_api_secret",
+    "NEXT_PUBLIC_LIVEKIT_URL": "@next_public_livekit_url"
+  }
+}
