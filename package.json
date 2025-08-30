@@ -11,6 +11,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.879.0",
     "@livekit/components-react": "^2.9.14",
+    "@livekit/components-styles": "^1.1.6",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.0",
     "livekit-client": "^2.15.6",
