@@ -190,35 +190,6 @@ export default function CallPage() {
     return () => subscription.unsubscribe()
   }, [roomId, router, fetchRoom, fetchParticipants, fetchRecordings, generateToken, supabase.auth])
 
-  const addParticipant = async (identity: string) => {
-    if (!user) return
-    
-    try {
-      // Check if participant already exists
-      const { data: existing } = await supabase
-        .from('participants')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('identity', identity)
-        .single()
-
-      if (!existing) {
-        const { error } = await supabase
-          .from('participants')
-          .insert([{
-            room_id: roomId,
-            identity,
-            joined_at: new Date().toISOString()
-          }])
-
-        if (error) throw error
-        await fetchParticipants()
-      }
-    } catch (error) {
-      console.error('Error adding participant:', error)
-    }
-  }
-
   const startRecording = async () => {
     if (!user || !room) return
 
@@ -330,7 +301,6 @@ export default function CallPage() {
               <LiveKitRoom
                 token={token}
                 roomName={roomId}
-                onParticipantConnected={addParticipant}
               />
             ) : (
               <div className="h-full flex items-center justify-center">

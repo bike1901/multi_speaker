@@ -13,14 +13,12 @@ import {
   Track,
   RoomEvent,
   ConnectionState,
-  Room,
 } from 'livekit-client'
 import '@livekit/components-styles'
 
 interface LiveKitRoomProps {
   token: string
   roomName: string
-  onParticipantConnected?: (identity: string) => void
 }
 
 function ParticipantView() {
@@ -129,7 +127,7 @@ function RoomStatus() {
   )
 }
 
-export default function LiveKitRoom({ token, roomName, onParticipantConnected }: LiveKitRoomProps) {
+export default function LiveKitRoom({ token, roomName }: LiveKitRoomProps) {
   const [isConnected, setIsConnected] = useState(false)
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL
 

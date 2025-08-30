@@ -4,11 +4,18 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
 import AuthButton from '@/components/AuthButton'
+import Link from 'next/link'
 
 export default function DebugLiveKitPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [debugInfo, setDebugInfo] = useState<{
+    success: boolean
+    requestParams?: Record<string, unknown>
+    response?: Record<string, unknown>
+    error?: string
+    timestamp: string
+  } | null>(null)
   const [testRoomId, setTestRoomId] = useState('demo-test-room')
   const [testing, setTesting] = useState(false)
   
@@ -33,7 +40,7 @@ export default function DebugLiveKitPage() {
       console.log('🧪 Testing token generation...')
       
       // First, ensure the demo room exists
-      const { data: room, error: roomError } = await supabase
+      const { error: roomError } = await supabase
         .from('rooms')
         .select('*')
         .eq('id', testRoomId)
@@ -125,9 +132,9 @@ export default function DebugLiveKitPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <a href="/" className="text-xl font-bold text-gray-900">
+              <Link href="/" className="text-xl font-bold text-gray-900">
                 🎙️ MultiSpeaker
-              </a>
+              </Link>
               <span className="ml-4 text-gray-500">Debug LiveKit</span>
             </div>
             <AuthButton />
@@ -225,12 +232,12 @@ export default function DebugLiveKitPage() {
                       LiveKit token generated successfully. You can now join rooms with this user account.
                     </p>
                     <div className="mt-3">
-                      <a
+                      <Link
                         href={`/call/${testRoomId}`}
                         className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
                       >
                         🎧 Join Test Room
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -293,24 +300,24 @@ export default function DebugLiveKitPage() {
             <div className="bg-blue-50 rounded-lg p-6">
               <h2 className="text-xl font-semibold text-blue-900 mb-4">🎯 Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a
+                <Link
                   href="/rooms"
                   className="block text-center bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   🏠 Go to Rooms
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/call/demo-test-room"
                   className="block text-center bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   🎧 Try Demo Room
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/test-db"
                   className="block text-center bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   🗄️ Test Database
-                </a>
+                </Link>
               </div>
             </div>
           </div>
