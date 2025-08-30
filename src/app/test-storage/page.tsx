@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { storageManager } from '@/lib/storage'
+import AudioPlayer from '@/components/AudioPlayer'
 import type { Tables } from '@/types/database'
 import type { User } from '@supabase/supabase-js'
 
@@ -21,6 +22,7 @@ export default function TestStoragePage() {
   const [uploading, setUploading] = useState(false)
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [newRoomName, setNewRoomName] = useState('')
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
 
   const supabase = createClient()
 
@@ -57,6 +59,22 @@ export default function TestStoragePage() {
     try {
       const recordings = await storageManager.listRecordings(roomId)
       setRecordings(recordings)
+      
+      // Generate signed URLs for all completed recordings
+      const urlPromises = recordings
+        .filter(r => r.status === 'completed')
+        .map(async (recording) => {
+          const url = await storageManager.getSignedUrl(recording.path)
+          return { id: recording.id, url }
+        })
+      
+      const urlResults = await Promise.all(urlPromises)
+      const urlMap = urlResults.reduce((acc, { id, url }) => {
+        if (url) acc[id] = url
+        return acc
+      }, {} as Record<string, string>)
+      
+      setSignedUrls(urlMap)
     } catch (err) {
       setError('Failed to load recordings')
     }
@@ -145,37 +163,18 @@ export default function TestStoragePage() {
     }
   }
 
-  const handleDownload = async (recording: Recording) => {
-    try {
-      const signedUrl = await storageManager.getSignedUrl(recording.path)
-      if (signedUrl) {
-        // Create a temporary link to download the file
-        const link = document.createElement('a')
-        link.href = signedUrl
-        link.download = `${recording.participant_identity}_${recording.id}.ogg`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } else {
-        setError('Failed to generate download URL')
-      }
-    } catch (err) {
-      setError('Failed to download recording')
-    }
-  }
-
-  const handlePlay = async (recording: Recording) => {
-    try {
-      const signedUrl = await storageManager.getSignedUrl(recording.path)
-      if (signedUrl) {
-        // Create audio element and play
-        const audio = new Audio(signedUrl)
-        audio.play().catch(console.error)
-      } else {
-        setError('Failed to generate playback URL')
-      }
-    } catch (err) {
-      setError('Failed to play recording')
+  const handleDownload = (recording: Recording) => {
+    const signedUrl = signedUrls[recording.id]
+    if (signedUrl) {
+      // Create a temporary link to download the file
+      const link = document.createElement('a')
+      link.href = signedUrl
+      link.download = `${recording.participant_identity}_${recording.id}.ogg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      setError('Download URL not available')
     }
   }
 
@@ -354,54 +353,59 @@ export default function TestStoragePage() {
               ) : recordings.length === 0 ? (
                 <p className="text-gray-500">No recordings found</p>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                   {recordings.map((recording) => (
                     <div key={recording.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-medium">{recording.participant_identity}</p>
-                          <p className="text-sm text-gray-600">
-                            Status: <span className={`font-medium ${
-                              recording.status === 'completed' ? 'text-green-600' :
-                              recording.status === 'processing' ? 'text-yellow-600' :
-                              recording.status === 'failed' ? 'text-red-600' :
-                              'text-gray-600'
-                            }`}>
-                              {recording.status}
-                            </span>
-                          </p>
-                          {recording.duration_seconds && (
+                      <div className="mb-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <p className="font-medium">{recording.participant_identity}</p>
                             <p className="text-sm text-gray-600">
-                              Duration: {Math.round(recording.duration_seconds)}s
+                              Status: <span className={`font-medium ${
+                                recording.status === 'completed' ? 'text-green-600' :
+                                recording.status === 'processing' ? 'text-yellow-600' :
+                                recording.status === 'failed' ? 'text-red-600' :
+                                'text-gray-600'
+                              }`}>
+                                {recording.status}
+                              </span>
                             </p>
-                          )}
-                          {recording.size_bytes && (
-                            <p className="text-sm text-gray-600">
-                              Size: {(recording.size_bytes / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          )}
-                          <p className="text-sm text-gray-600">
-                            Created: {new Date(recording.created_at!).toLocaleString()}
-                          </p>
-                        </div>
-                        
-                        {recording.status === 'completed' && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handlePlay(recording)}
-                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                            >
-                              ▶️ Play
-                            </button>
+                          </div>
+                          
+                          {recording.status === 'completed' && (
                             <button
                               onClick={() => handleDownload(recording)}
-                              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 flex items-center gap-1"
                             >
                               📥 Download
                             </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                          {recording.duration_seconds && (
+                            <div>Duration: {Math.round(recording.duration_seconds)}s</div>
+                          )}
+                          {recording.size_bytes && (
+                            <div>Size: {(recording.size_bytes / 1024 / 1024).toFixed(2)} MB</div>
+                          )}
+                          <div className="col-span-2">
+                            Created: {new Date(recording.created_at!).toLocaleString()}
                           </div>
-                        )}
+                        </div>
                       </div>
+
+                      {/* Audio Player */}
+                      {recording.status === 'completed' && signedUrls[recording.id] && (
+                        <AudioPlayer
+                          signedUrl={signedUrls[recording.id]}
+                          filename={`${recording.participant_identity}.ogg`}
+                        />
+                      )}
+                      
+                      {recording.status === 'completed' && !signedUrls[recording.id] && (
+                        <div className="text-sm text-gray-500 italic">Loading audio player...</div>
+                      )}
                     </div>
                   ))}
                 </div>
