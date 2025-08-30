@@ -11,26 +11,20 @@ export class StorageManager {
    */
   async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string | null> {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession()
-      if (!session) {
-        throw new Error('Not authenticated')
+      console.log('Generating signed URL for path:', path)
+      
+      // Direct Supabase storage call (bypassing Edge Function for now)
+      const { data, error } = await this.supabase.storage
+        .from('calls')
+        .createSignedUrl(path, expiresIn)
+
+      if (error) {
+        console.error('Signed URL error:', error)
+        throw new Error(`Failed to create signed URL: ${error.message}`)
       }
 
-      const response = await fetch(
-        `/api/storage-manager?action=get-signed-url&path=${encodeURIComponent(path)}&expiresIn=${expiresIn}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`Failed to get signed URL: ${response.statusText}`)
-      }
-
-      const { signedUrl } = await response.json()
-      return signedUrl
+      console.log('Generated signed URL successfully')
+      return data?.signedUrl || null
     } catch (error) {
       console.error('Error getting signed URL:', error)
       return null
@@ -42,25 +36,21 @@ export class StorageManager {
    */
   async listRecordings(roomId: string): Promise<Recording[]> {
     try {
-      const { data: { session } } = await this.supabase.auth.getSession()
-      if (!session) {
-        throw new Error('Not authenticated')
+      console.log('Listing recordings for room:', roomId)
+      
+      // Direct database query (bypassing Edge Function for now)
+      const { data: recordings, error } = await this.supabase
+        .from('recordings')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Database query error:', error)
+        throw new Error(`Database error: ${error.message}`)
       }
 
-      const response = await fetch(
-        `/api/storage-manager?action=list-recordings&roomId=${encodeURIComponent(roomId)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`Failed to list recordings: ${response.statusText}`)
-      }
-
-      const { recordings } = await response.json()
+      console.log('Found recordings:', recordings?.length || 0, recordings)
       return recordings || []
     } catch (error) {
       console.error('Error listing recordings:', error)

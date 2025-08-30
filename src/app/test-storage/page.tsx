@@ -149,13 +149,33 @@ export default function TestStoragePage() {
     try {
       const signedUrl = await storageManager.getSignedUrl(recording.path)
       if (signedUrl) {
-        // Open in new tab for download
-        window.open(signedUrl, '_blank')
+        // Create a temporary link to download the file
+        const link = document.createElement('a')
+        link.href = signedUrl
+        link.download = `${recording.participant_identity}_${recording.id}.ogg`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       } else {
         setError('Failed to generate download URL')
       }
     } catch (err) {
       setError('Failed to download recording')
+    }
+  }
+
+  const handlePlay = async (recording: Recording) => {
+    try {
+      const signedUrl = await storageManager.getSignedUrl(recording.path)
+      if (signedUrl) {
+        // Create audio element and play
+        const audio = new Audio(signedUrl)
+        audio.play().catch(console.error)
+      } else {
+        setError('Failed to generate playback URL')
+      }
+    } catch (err) {
+      setError('Failed to play recording')
     }
   }
 
@@ -366,12 +386,20 @@ export default function TestStoragePage() {
                         </div>
                         
                         {recording.status === 'completed' && (
-                          <button
-                            onClick={() => handleDownload(recording)}
-                            className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                          >
-                            Download
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handlePlay(recording)}
+                              className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                            >
+                              ▶️ Play
+                            </button>
+                            <button
+                              onClick={() => handleDownload(recording)}
+                              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                            >
+                              📥 Download
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
