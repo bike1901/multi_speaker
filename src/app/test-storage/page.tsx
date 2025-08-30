@@ -19,6 +19,8 @@ export default function TestStoragePage() {
   const [error, setError] = useState<string | null>(null)
   const [testFile, setTestFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [creatingRoom, setCreatingRoom] = useState(false)
+  const [newRoomName, setNewRoomName] = useState('')
 
   const supabase = createClient()
 
@@ -143,6 +145,40 @@ export default function TestStoragePage() {
     }
   }
 
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim() || !user) return
+
+    setCreatingRoom(true)
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .insert({
+          name: newRoomName.trim(),
+          owner_id: user.id
+        })
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      // Add to rooms list
+      setRooms(prev => [data, ...prev])
+      
+      // Auto-select the new room
+      setSelectedRoom(data.id)
+      
+      // Clear form
+      setNewRoomName('')
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create room')
+    } finally {
+      setCreatingRoom(false)
+    }
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -178,9 +214,33 @@ export default function TestStoragePage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Room Selection & File Upload */}
+            {/* Room Creation & Selection */}
             <div>
-              <h2 className="text-lg font-semibold mb-4">Test File Upload</h2>
+              <h2 className="text-lg font-semibold mb-4">Room Management</h2>
+              
+              {/* Create New Room */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="font-medium text-green-900 mb-2">Create New Room</h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newRoomName}
+                    onChange={(e) => setNewRoomName(e.target.value)}
+                    placeholder="Enter room name..."
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                    onKeyPress={(e) => e.key === 'Enter' && handleCreateRoom()}
+                  />
+                  <button
+                    onClick={handleCreateRoom}
+                    disabled={!newRoomName.trim() || creatingRoom}
+                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {creatingRoom ? 'Creating...' : 'Create'}
+                  </button>
+                </div>
+              </div>
+
+              <h3 className="text-md font-semibold mb-4">Test File Upload</h3>
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -191,7 +251,9 @@ export default function TestStoragePage() {
                   onChange={(e) => handleRoomSelect(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                 >
-                  <option value="">Choose a room...</option>
+                  <option value="">
+                    {rooms.length === 0 ? 'Create a room first...' : 'Choose a room...'}
+                  </option>
                   {rooms.map((room) => (
                     <option key={room.id} value={room.id}>
                       {room.name}

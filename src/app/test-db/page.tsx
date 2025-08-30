@@ -49,11 +49,16 @@ export default function TestDbPage() {
     }
 
     try {
+      // Get custom name from input or use default
+      const nameInput = document.getElementById('room-name-input') as HTMLInputElement
+      const customName = nameInput?.value.trim()
+      const roomName = customName || `Test Room ${Date.now()}`
+
       const { error } = await supabase
         .from('rooms')
         .insert([
           {
-            name: `Test Room ${Date.now()}`,
+            name: roomName,
             owner_id: user.id
           }
         ])
@@ -62,12 +67,16 @@ export default function TestDbPage() {
       if (error) {
         setError(error.message)
       } else {
+        // Clear input
+        if (nameInput) nameInput.value = ''
+        
         // Refresh rooms
         const { data: rooms } = await supabase
           .from('rooms')
           .select('*')
           .order('created_at', { ascending: false })
         setRooms(rooms || [])
+        setError(null)
       }
     } catch {
       setError('Failed to create room')
@@ -107,13 +116,21 @@ export default function TestDbPage() {
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Rooms ({rooms.length})</h2>
-              <button
-                onClick={createTestRoom}
-                disabled={!user}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
-              >
-                Create Test Room
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Room name (optional)"
+                  className="flex-1 border border-gray-300 rounded px-3 py-2"
+                  id="room-name-input"
+                />
+                <button
+                  onClick={createTestRoom}
+                  disabled={!user}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
+                >
+                  Create Test Room
+                </button>
+              </div>
             </div>
             
             {rooms.length === 0 ? (
