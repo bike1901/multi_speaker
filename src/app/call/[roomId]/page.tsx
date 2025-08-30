@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Tables } from '@/types/database'
@@ -26,38 +26,7 @@ export default function CallPage() {
   
   const supabase = createClient()
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/rooms')
-        return
-      }
-      
-      setUser(user)
-      await Promise.all([
-        fetchRoom(),
-        fetchParticipants(),
-        fetchRecordings(),
-        generateToken(user)
-      ])
-      setLoading(false)
-    }
-
-    getUser()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        router.push('/rooms')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [roomId, router, fetchRoom, fetchParticipants, fetchRecordings, generateToken, supabase.auth])
-
-  const fetchRoom = async () => {
+  const fetchRoom = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('rooms')
@@ -119,9 +88,9 @@ export default function CallPage() {
       console.error('Error creating demo room:', error)
       setError('Failed to create demo room')
     }
-  }
+  }, [roomId, user, supabase])
 
-  const fetchParticipants = async () => {
+  const fetchParticipants = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('participants')
@@ -134,9 +103,9 @@ export default function CallPage() {
     } catch (error) {
       console.error('Error fetching participants:', error)
     }
-  }
+  }, [roomId, supabase])
 
-  const fetchRecordings = async () => {
+  const fetchRecordings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('recordings')
@@ -149,9 +118,9 @@ export default function CallPage() {
     } catch (error) {
       console.error('Error fetching recordings:', error)
     }
-  }
+  }, [roomId, supabase])
 
-  const generateToken = async (user: User) => {
+  const generateToken = useCallback(async (user: User) => {
     try {
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: {
@@ -169,7 +138,38 @@ export default function CallPage() {
       console.error('Error generating token:', error)
       setError('Failed to generate access token')
     }
-  }
+  }, [roomId, supabase])
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/rooms')
+        return
+      }
+      
+      setUser(user)
+      await Promise.all([
+        fetchRoom(),
+        fetchParticipants(),
+        fetchRecordings(),
+        generateToken(user)
+      ])
+      setLoading(false)
+    }
+
+    getUser()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) {
+        router.push('/rooms')
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [roomId, router, fetchRoom, fetchParticipants, fetchRecordings, generateToken, supabase.auth])
 
   const addParticipant = async (identity: string) => {
     if (!user) return

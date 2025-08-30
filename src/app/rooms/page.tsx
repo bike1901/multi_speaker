@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Tables } from '@/types/database'
 import AuthButton from '@/components/AuthButton'
@@ -17,6 +17,20 @@ export default function RoomsPage() {
   const [roomName, setRoomName] = useState('')
   const [joinRoomId, setJoinRoomId] = useState('')
   const supabase = createClient()
+
+  const fetchRooms = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setRooms(data || [])
+    } catch (error) {
+      console.error('Error fetching rooms:', error)
+    }
+  }, [supabase])
 
   useEffect(() => {
     // Get initial user
@@ -43,20 +57,6 @@ export default function RoomsPage() {
 
     return () => subscription.unsubscribe()
   }, [fetchRooms, supabase.auth])
-
-  const fetchRooms = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setRooms(data || [])
-    } catch (error) {
-      console.error('Error fetching rooms:', error)
-    }
-  }
 
   const createRoom = async (e: React.FormEvent) => {
     e.preventDefault()
