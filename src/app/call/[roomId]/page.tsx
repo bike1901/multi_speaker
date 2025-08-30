@@ -26,15 +26,35 @@ export default function CallPage() {
   
   const supabase = createClient()
 
-  const createDemoRoom = useCallback(async () => {
-    if (!user) return
+  const createOrGetDemoRoom = useCallback(async () => {
+    if (!user) return null
     
     try {
-      const { error } = await supabase
+      // First check if a demo room already exists for this user
+      const { data: existingRooms, error: checkError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('name', '🎧 Demo Test Room')
+        .eq('owner_id', user.id)
+        .limit(1)
+
+      if (checkError) {
+        console.error('Error checking for existing demo room:', checkError)
+        throw checkError
+      }
+
+      if (existingRooms && existingRooms.length > 0) {
+        // Demo room already exists, use it
+        console.log('Using existing demo room:', existingRooms[0].id)
+        setRoom(existingRooms[0])
+        return existingRooms[0].id
+      }
+
+      // Create a new demo room with proper UUID (let database generate it)
+      const { data: newRoom, error: insertError } = await supabase
         .from('rooms')
         .insert([
           {
-            id: 'demo-test-room',
             name: '🎧 Demo Test Room',
             owner_id: user.id,
           },
@@ -42,27 +62,42 @@ export default function CallPage() {
         .select()
         .single()
 
-      if (error && error.code !== '23505') { // Ignore duplicate key error
-        throw error
+      if (insertError) {
+        console.error('Error creating demo room:', insertError)
+        throw insertError
       }
       
-      // Fetch the room again after creating it
-      const { data: roomData, error: fetchError } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('id', 'demo-test-room')
-        .single()
-
-      if (fetchError) throw fetchError
-      setRoom(roomData)
+      console.log('Created new demo room:', newRoom.id)
+      setRoom(newRoom)
+      return newRoom.id
     } catch (error) {
-      console.error('Error creating demo room:', error)
-      setError('Failed to create demo room')
+      console.error('Error with demo room:', error)
+      setError('Failed to create or access demo room')
+      return null
     }
   }, [user, supabase])
 
   const fetchRoom = useCallback(async () => {
     try {
+      // Special handling for demo room URL
+      if (roomId === 'demo-test-room') {
+        if (!user) {
+          setError('Please sign in to access the demo room')
+          return
+        }
+        
+        console.log('Handling demo room request')
+        const demoRoomId = await createOrGetDemoRoom()
+        
+        if (demoRoomId) {
+          // Redirect to the proper UUID-based room URL
+          console.log('Redirecting to demo room:', demoRoomId)
+          router.push(`/call/${demoRoomId}`)
+        }
+        return
+      }
+
+      // Regular room fetching for UUID-based room IDs
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
@@ -71,14 +106,13 @@ export default function CallPage() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // Room not found, check if it's the demo room and create it
-          if (roomId === 'demo-test-room' && user) {
-            await createDemoRoom()
-          } else {
-            setError('Room not found')
-          }
+          setError('Room not found')
+        } else if (error.code === '22P02') {
+          // Invalid UUID format
+          setError('Invalid room ID format')
         } else {
-          throw error
+          console.error('Database error:', error)
+          setError('Failed to load room')
         }
         return
       }
@@ -88,9 +122,12 @@ export default function CallPage() {
       console.error('Error fetching room:', error)
       setError('Failed to load room')
     }
-  }, [roomId, user, supabase, createDemoRoom])
+  }, [roomId, user, supabase, createOrGetDemoRoom, router])
 
   const fetchParticipants = useCallback(async () => {
+    // Skip if this is the demo room URL (will redirect first)
+    if (roomId === 'demo-test-room') return
+    
     try {
       const { data, error } = await supabase
         .from('participants')
@@ -98,7 +135,14 @@ export default function CallPage() {
         .eq('room_id', roomId)
         .order('joined_at', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '22P02') {
+          // Invalid UUID format - don't log as error, just skip
+          console.log('Skipping participant fetch for invalid room ID format')
+          return
+        }
+        throw error
+      }
       setParticipants(data || [])
     } catch (error) {
       console.error('Error fetching participants:', error)
@@ -106,6 +150,9 @@ export default function CallPage() {
   }, [roomId, supabase])
 
   const fetchRecordings = useCallback(async () => {
+    // Skip if this is the demo room URL (will redirect first)
+    if (roomId === 'demo-test-room') return
+    
     try {
       const { data, error } = await supabase
         .from('recordings')
@@ -113,7 +160,14 @@ export default function CallPage() {
         .eq('room_id', roomId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '22P02') {
+          // Invalid UUID format - don't log as error, just skip
+          console.log('Skipping recordings fetch for invalid room ID format')
+          return
+        }
+        throw error
+      }
       setRecordings(data || [])
     } catch (error) {
       console.error('Error fetching recordings:', error)
@@ -121,6 +175,9 @@ export default function CallPage() {
   }, [roomId, supabase])
 
   const generateToken = useCallback(async (user: User) => {
+    // Skip if this is the demo room URL (will redirect first)
+    if (roomId === 'demo-test-room') return
+    
     try {
       console.log('Generating token for:', {
         roomId,
@@ -169,6 +226,15 @@ export default function CallPage() {
       }
       
       setUser(user)
+      
+      // For demo room, handle redirect first
+      if (roomId === 'demo-test-room') {
+        await fetchRoom() // This will redirect to proper UUID room
+        setLoading(false)
+        return
+      }
+      
+      // For regular UUID rooms, fetch all data in parallel
       await Promise.all([
         fetchRoom(),
         fetchParticipants(),

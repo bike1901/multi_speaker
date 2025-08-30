@@ -39,38 +39,71 @@ export default function DebugLiveKitPage() {
     try {
       console.log('🧪 Testing token generation...')
       
-      // First, ensure the demo room exists
-      const { error: roomError } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('id', testRoomId)
-        .single()
+      let actualRoomId = testRoomId
 
-      if (roomError && roomError.code === 'PGRST116') {
-        console.log('📝 Creating demo room...')
-        const { error: createError } = await supabase
+      // Handle demo room case - create/get proper UUID room
+      if (testRoomId === 'demo-test-room') {
+        // Check if user already has a debug demo room
+        const { data: existingRooms, error: checkError } = await supabase
           .from('rooms')
-          .insert([{
-            id: testRoomId,
-            name: '🧪 Debug Test Room',
-            owner_id: user.id
-          }])
-        
-        if (createError && createError.code !== '23505') {
-          throw new Error(`Failed to create room: ${createError.message}`)
+          .select('*')
+          .eq('name', '🧪 Debug Test Room')
+          .eq('owner_id', user.id)
+          .limit(1)
+
+        if (checkError) throw checkError
+
+        if (existingRooms && existingRooms.length > 0) {
+          actualRoomId = existingRooms[0].id
+          console.log('📍 Using existing debug room:', actualRoomId)
+        } else {
+          // Create new debug room with proper UUID
+          console.log('📝 Creating debug room...')
+          const { data: newRoom, error: createError } = await supabase
+            .from('rooms')
+            .insert([{
+              name: '🧪 Debug Test Room',
+              owner_id: user.id
+            }])
+            .select()
+            .single()
+
+          if (createError) {
+            throw new Error(`Failed to create room: ${createError.message}`)
+          }
+          
+          actualRoomId = newRoom.id
+          console.log('✅ Created debug room:', actualRoomId)
+        }
+      } else {
+        // For UUID room IDs, verify the room exists
+        const { error: roomError } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('id', testRoomId)
+          .single()
+
+        if (roomError) {
+          if (roomError.code === 'PGRST116') {
+            throw new Error('Room not found. Please use an existing room ID or "demo-test-room".')
+          } else if (roomError.code === '22P02') {
+            throw new Error('Invalid room ID format. Please use a valid UUID or "demo-test-room".')
+          } else {
+            throw new Error(`Database error: ${roomError.message}`)
+          }
         }
       }
 
       // Test Edge Function call
       console.log('🚀 Calling Edge Function with:', {
-        roomId: testRoomId,
+        roomId: actualRoomId,
         identity: user.id,
         participantName: user.user_metadata?.full_name || user.email || 'Test User'
       })
 
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: {
-          roomId: testRoomId,
+          roomId: actualRoomId,
           identity: user.id,
           participantName: user.user_metadata?.full_name || user.email || 'Test User'
         }
@@ -79,7 +112,7 @@ export default function DebugLiveKitPage() {
       const debugResult = {
         success: !error,
         requestParams: {
-          roomId: testRoomId,
+          roomId: actualRoomId,
           identity: user.id,
           participantName: user.user_metadata?.full_name || user.email || 'Test User'
         },

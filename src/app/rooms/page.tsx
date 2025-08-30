@@ -95,10 +95,29 @@ export default function RoomsPage() {
     window.location.href = `/call/${roomId}`
   }
 
+  const isValidUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    return uuidRegex.test(str)
+  }
+
   const handleJoinById = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!joinRoomId.trim()) return
-    joinRoom(joinRoomId.trim())
+    const trimmedId = joinRoomId.trim()
+    if (!trimmedId) return
+
+    // Handle special demo room case
+    if (trimmedId === 'demo-test-room') {
+      joinRoom(trimmedId)
+      return
+    }
+
+    // Validate UUID format for regular rooms
+    if (!isValidUUID(trimmedId)) {
+      alert('Invalid room ID format. Room IDs should be in UUID format (e.g., 12345678-1234-4567-8901-123456789abc) or use "demo-test-room" for the demo.')
+      return
+    }
+
+    joinRoom(trimmedId)
   }
 
   if (loading) {
