@@ -1,20 +1,20 @@
 import { S3Client, ListBucketsCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { NextResponse } from 'next/server'
 
-const s3Client = new S3Client({
-  forcePathStyle: true,
-  region: process.env.S3_REGION || 'us-east-1',
-  endpoint: process.env.S3_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-  },
-})
-
 export async function POST() {
   try {
+    // Debug environment variables
+    const envDebug = {
+      S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID ? 'SET' : 'MISSING',
+      S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY ? 'SET' : 'MISSING', 
+      S3_ENDPOINT: process.env.S3_ENDPOINT || 'MISSING',
+      S3_REGION: process.env.S3_REGION || 'MISSING',
+      S3_BUCKET: process.env.S3_BUCKET || 'MISSING'
+    }
+
     const testResults: {
       timestamp: string;
+      envDebug: typeof envDebug;
       tests: Record<string, {
         success: boolean;
         [key: string]: unknown;
@@ -25,8 +25,20 @@ export async function POST() {
       };
     } = {
       timestamp: new Date().toISOString(),
+      envDebug,
       tests: {}
     }
+
+    // Initialize S3 client with environment variables
+    const s3Client = new S3Client({
+      forcePathStyle: true,
+      region: process.env.S3_REGION || 'us-east-1',
+      endpoint: process.env.S3_ENDPOINT,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+      },
+    })
 
     // Test 1: List buckets
     try {
