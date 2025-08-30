@@ -64,6 +64,27 @@ export default function Home() {
                   🎙️ Start Recording Session
                 </a>
                 
+                {/* Quick Test Room Join */}
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="text-center">
+                    <h3 className="font-semibold text-purple-900 mb-2">⚡ Quick Test</h3>
+                    <p className="text-purple-700 text-sm mb-4">
+                      Join the demo room instantly to test multi-speaker recording
+                    </p>
+                    <div className="space-y-2">
+                      <a
+                        href="/call/demo-test-room"
+                        className="block w-full bg-purple-600 text-white text-center py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                      >
+                        🎧 Join Demo Room
+                      </a>
+                      <p className="text-xs text-purple-600">
+                        Room ID: <code className="bg-purple-100 px-1 rounded">demo-test-room</code>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                   <h3 className="font-semibold text-green-900 mb-2">🎉 Now Available!</h3>
                   <ul className="text-sm text-green-800 space-y-1">
@@ -115,10 +136,25 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Note:</strong> You need to be signed in to access the test pages. 
-                  Create rooms and test functionality before we add LiveKit integration.
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <a
+                  href="/call/demo-test-room"
+                  className="block p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <div className="flex items-center mb-3">
+                    <div className="text-2xl mr-3">🎧</div>
+                    <h3 className="text-lg font-semibold text-purple-900">LiveKit Test</h3>
+                  </div>
+                  <p className="text-purple-700 text-sm">
+                    Join the demo room for instant multi-speaker recording test with real-time audio.
+                  </p>
+                </a>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  <strong>✨ New!</strong> LiveKit integration is live! You can now test real-time multi-speaker recording. 
+                  Sign in to access all features and create your own rooms.
                 </p>
               </div>
             </div>

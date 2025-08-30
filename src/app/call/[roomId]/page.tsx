@@ -67,7 +67,12 @@ export default function CallPage() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          setError('Room not found')
+          // Room not found, check if it's the demo room and create it
+          if (roomId === 'demo-test-room' && user) {
+            await createDemoRoom()
+          } else {
+            setError('Room not found')
+          }
         } else {
           throw error
         }
@@ -78,6 +83,41 @@ export default function CallPage() {
     } catch (error) {
       console.error('Error fetching room:', error)
       setError('Failed to load room')
+    }
+  }
+
+  const createDemoRoom = async () => {
+    if (!user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .insert([
+          {
+            id: 'demo-test-room',
+            name: '🎧 Demo Test Room',
+            owner_id: user.id,
+          },
+        ])
+        .select()
+        .single()
+
+      if (error && error.code !== '23505') { // Ignore duplicate key error
+        throw error
+      }
+      
+      // Fetch the room again after creating it
+      const { data: roomData, error: fetchError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('id', 'demo-test-room')
+        .single()
+
+      if (fetchError) throw fetchError
+      setRoom(roomData)
+    } catch (error) {
+      console.error('Error creating demo room:', error)
+      setError('Failed to create demo room')
     }
   }
 
