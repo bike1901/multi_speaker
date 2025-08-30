@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase'
 
 export interface LiveKitTokenRequest {
-  room: string
+  roomId: string
   identity: string
-  name?: string
+  participantName?: string
 }
 
 export interface LiveKitTokenResponse {
@@ -11,10 +11,12 @@ export interface LiveKitTokenResponse {
 }
 
 export interface LiveKitEgressRequest {
-  action: 'start' | 'stop'
-  room_name?: string
-  identity?: string
-  egress_id?: string
+  action: 'start_room' | 'start_participant' | 'start_track' | 'stop'
+  roomId?: string
+  participantIdentity?: string
+  egressId?: string
+  trackSid?: string
+  filename?: string
 }
 
 export interface LiveKitEgressResponse {
@@ -27,17 +29,17 @@ export interface LiveKitEgressResponse {
  * Generate a LiveKit access token for a user to join a room
  */
 export async function generateLiveKitToken(
-  room: string,
+  roomId: string,
   identity: string,
-  name?: string
+  participantName?: string
 ): Promise<string> {
   const supabase = createClient()
   
   const { data, error } = await supabase.functions.invoke('livekit-token', {
     body: {
-      room,
+      roomId,
       identity,
-      name: name || identity
+      participantName: participantName || identity
     }
   })
 
@@ -57,16 +59,16 @@ export async function generateLiveKitToken(
  * Start recording for a room and participant
  */
 export async function startRecording(
-  roomName: string,
-  identity: string
+  roomId: string,
+  participantIdentity: string
 ): Promise<LiveKitEgressResponse> {
   const supabase = createClient()
   
   const { data, error } = await supabase.functions.invoke('livekit-egress', {
     body: {
-      action: 'start',
-      room_name: roomName,
-      identity
+      action: 'start_participant',
+      roomId,
+      participantIdentity
     }
   })
 
@@ -81,13 +83,14 @@ export async function startRecording(
 /**
  * Stop recording for a specific egress
  */
-export async function stopRecording(egressId: string): Promise<LiveKitEgressResponse> {
+export async function stopRecording(egressId: string, roomId: string): Promise<LiveKitEgressResponse> {
   const supabase = createClient()
   
   const { data, error } = await supabase.functions.invoke('livekit-egress', {
     body: {
       action: 'stop',
-      egress_id: egressId
+      roomId,
+      egressId
     }
   })
 

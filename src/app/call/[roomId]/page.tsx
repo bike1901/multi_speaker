@@ -124,9 +124,9 @@ export default function CallPage() {
     try {
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: {
-          room: roomId,
+          roomId: roomId,
           identity: user.id,
-          name: user.user_metadata?.full_name || user.email || 'Anonymous'
+          participantName: user.user_metadata?.full_name || user.email || 'Anonymous'
         }
       })
 
@@ -206,9 +206,9 @@ export default function CallPage() {
     try {
       const { data, error } = await supabase.functions.invoke('livekit-egress', {
         body: {
-          action: 'start',
-          room_name: roomId,
-          identity: user.id
+          action: 'start_participant',
+          roomId,
+          participantIdentity: user.id
         }
       })
 
@@ -231,7 +231,8 @@ export default function CallPage() {
       const { data, error } = await supabase.functions.invoke('livekit-egress', {
         body: {
           action: 'stop',
-          egress_id: recordingId
+          roomId,
+          egressId: recordingId
         }
       })
 
