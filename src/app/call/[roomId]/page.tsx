@@ -217,8 +217,12 @@ export default function CallPage() {
   }, [roomId, supabase])
 
   useEffect(() => {
+    let mounted = true
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!mounted) return
       
       if (!user) {
         router.push('/rooms')
@@ -229,19 +233,75 @@ export default function CallPage() {
       
       // For demo room, handle redirect first
       if (roomId === 'demo-test-room') {
-        await fetchRoom() // This will redirect to proper UUID room
+        try {
+          // First check if a demo room already exists for this user
+          const { data: existingRooms, error: checkError } = await supabase
+            .from('rooms')
+            .select('*')
+            .eq('name', '🎧 Demo Test Room')
+            .eq('owner_id', user.id)
+            .limit(1)
+
+          if (checkError) {
+            console.error('Error checking for existing demo room:', checkError)
+            setError('Failed to access demo room')
+            setLoading(false)
+            return
+          }
+
+          let demoRoomId = null
+
+          if (existingRooms && existingRooms.length > 0) {
+            // Demo room already exists, use it
+            demoRoomId = existingRooms[0].id
+          } else {
+            // Create a new demo room
+            const { data: newRoom, error: insertError } = await supabase
+              .from('rooms')
+              .insert([{
+                name: '🎧 Demo Test Room',
+                owner_id: user.id,
+              }])
+              .select()
+              .single()
+
+            if (insertError) {
+              console.error('Error creating demo room:', insertError)
+              setError('Failed to create demo room')
+              setLoading(false)
+              return
+            }
+            
+            demoRoomId = newRoom.id
+          }
+
+          if (demoRoomId && mounted) {
+            router.push(`/call/${demoRoomId}`)
+          }
+        } catch (error) {
+          console.error('Error with demo room:', error)
+          setError('Failed to access demo room')
+        }
+        
         setLoading(false)
         return
       }
       
       // For regular UUID rooms, fetch all data in parallel
-      await Promise.all([
-        fetchRoom(),
-        fetchParticipants(),
-        fetchRecordings(),
-        generateToken(user)
-      ])
-      setLoading(false)
+      try {
+        await Promise.all([
+          fetchRoom(),
+          fetchParticipants(),
+          fetchRecordings(),
+          generateToken(user)
+        ])
+      } catch (error) {
+        console.error('Error loading room data:', error)
+      }
+      
+      if (mounted) {
+        setLoading(false)
+      }
     }
 
     getUser()
@@ -253,8 +313,11 @@ export default function CallPage() {
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [roomId, router, fetchRoom, fetchParticipants, fetchRecordings, generateToken, supabase.auth])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [roomId]) // Only depend on roomId to avoid infinite loops
 
   const startRecording = async () => {
     if (!user || !room) return
