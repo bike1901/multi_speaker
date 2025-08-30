@@ -52,20 +52,29 @@ export default function Home() {
             <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Get Started</h2>
               <p className="text-gray-600 mb-6">
-                Sign in with GitHub or Google to test the authentication system. Recording features are coming soon!
+                Sign in with GitHub or Google to start creating multi-speaker recording rooms!
               </p>
               <AuthButton />
               
-              <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">🚧 Development Roadmap</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>✅ Authentication & Database</li>
-                  <li>✅ Storage & File Management</li>
-                  <li>🔄 LiveKit Server Setup (GCP)</li>
-                  <li>⏳ Room Management UI</li>
-                  <li>⏳ Multi-Speaker Recording</li>
-                  <li>⏳ Audio Track Export</li>
-                </ul>
+              <div className="mt-8 space-y-4">
+                <a
+                  href="/rooms"
+                  className="block w-full bg-blue-600 text-white text-center py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+                >
+                  🎙️ Start Recording Session
+                </a>
+                
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h3 className="font-semibold text-green-900 mb-2">🎉 Now Available!</h3>
+                  <ul className="text-sm text-green-800 space-y-1">
+                    <li>✅ Authentication & Database</li>
+                    <li>✅ Storage & File Management</li>
+                    <li>✅ LiveKit Integration</li>
+                    <li>✅ Room Management UI</li>
+                    <li>✅ Multi-Speaker Recording</li>
+                    <li>🔄 Audio Track Export (in progress)</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
