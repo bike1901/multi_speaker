@@ -89,30 +89,40 @@ export default function TestStoragePage() {
     if (!testFile || !selectedRoom || !user) return
 
     setUploading(true)
+    setError(null) // Clear previous errors
+    
     try {
+      console.log('Starting upload process...')
+      const participantIdentity = `test_user_${Date.now()}`
+      
       // Upload the test file
       const path = await storageManager.uploadRecording(
         selectedRoom,
-        `test_user_${Date.now()}`,
+        participantIdentity,
         testFile
       )
 
       if (path) {
+        console.log('File uploaded, creating database record...')
+        
         // Create a recording entry in the database
-        const { error } = await supabase
+        const { error: dbError } = await supabase
           .from('recordings')
           .insert({
             room_id: selectedRoom,
-            participant_identity: `test_user_${Date.now()}`,
+            participant_identity: participantIdentity,
             path: path,
             status: 'completed',
             size_bytes: testFile.size,
             created_by: user.id
           })
 
-        if (error) {
-          throw error
+        if (dbError) {
+          console.error('Database error:', dbError)
+          throw new Error(`Database error: ${dbError.message}`)
         }
+
+        console.log('Database record created successfully')
 
         // Reload recordings
         await loadRecordings(selectedRoom)
@@ -121,11 +131,15 @@ export default function TestStoragePage() {
         // Reset file input
         const fileInput = document.getElementById('test-file') as HTMLInputElement
         if (fileInput) fileInput.value = ''
+        
+        console.log('Upload process completed successfully')
       } else {
-        throw new Error('Upload failed')
+        throw new Error('Upload returned null path')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      console.error('Upload process failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed for unknown reason'
+      setError(`Upload failed: ${errorMessage}`)
     } finally {
       setUploading(false)
     }
@@ -296,6 +310,16 @@ export default function TestStoragePage() {
                   <li>✅ Allowed formats: OGG, MP3, WAV, WebM</li>
                   <li>✅ RLS policies: Room-based access</li>
                 </ul>
+              </div>
+
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">🔍 Debug Info</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  Check your browser&apos;s Developer Console (F12) for detailed logs during upload.
+                </p>
+                <p className="text-sm text-gray-600">
+                  Look for messages starting with &quot;Starting upload:&quot;, &quot;Supabase storage error:&quot;, etc.
+                </p>
               </div>
             </div>
 

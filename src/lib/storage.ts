@@ -80,7 +80,10 @@ export class StorageManager {
    */
   async uploadRecording(roomId: string, participantIdentity: string, file: File): Promise<string | null> {
     try {
+      console.log('Starting upload:', { roomId, participantIdentity, fileName: file.name, fileSize: file.size, fileType: file.type })
+      
       const path = this.generateRecordingPath(roomId, participantIdentity)
+      console.log('Generated path:', path)
       
       const { data, error } = await this.supabase.storage
         .from('calls')
@@ -90,13 +93,15 @@ export class StorageManager {
         })
 
       if (error) {
-        throw error
+        console.error('Supabase storage error:', error)
+        throw new Error(`Upload failed: ${error.message}`)
       }
 
+      console.log('Upload successful:', data)
       return data.path
     } catch (error) {
       console.error('Error uploading recording:', error)
-      return null
+      throw error // Re-throw to get the actual error message
     }
   }
 
