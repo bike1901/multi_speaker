@@ -55,8 +55,8 @@ export async function POST() {
       }
     }
 
-    // Test 2: Upload test file
-    const testKey = `test-s3-${Date.now()}.txt`
+    // Test 2: Upload test file (using audio-compatible format)
+    const testKey = `test-s3-${Date.now()}.mp3`
     const testContent = 'Hello from S3 compatibility test!'
     
     try {
@@ -64,7 +64,7 @@ export async function POST() {
         Bucket: process.env.S3_BUCKET || 'calls',
         Key: testKey,
         Body: testContent,
-        ContentType: 'text/plain'
+        ContentType: 'audio/mpeg'
       }))
       
       testResults.tests.upload = {
