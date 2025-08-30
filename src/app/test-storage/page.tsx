@@ -16,7 +16,7 @@ export default function TestStoragePage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [selectedRoom, setSelectedRoom] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [testFile, setTestFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -44,7 +44,7 @@ export default function TestStoragePage() {
         } else {
           setRooms(data || [])
         }
-      } catch (err) {
+      } catch {
         setError('Failed to fetch rooms')
       } finally {
         setLoading(false)
@@ -75,7 +75,7 @@ export default function TestStoragePage() {
       }, {} as Record<string, string>)
       
       setSignedUrls(urlMap)
-    } catch (err) {
+    } catch {
       setError('Failed to load recordings')
     }
   }

@@ -55,7 +55,7 @@ export default function CallPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [roomId, router])
+  }, [roomId, router, fetchRoom, fetchParticipants, fetchRecordings, generateToken, supabase.auth])
 
   const fetchRoom = async () => {
     try {
@@ -90,7 +90,7 @@ export default function CallPage() {
     if (!user) return
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('rooms')
         .insert([
           {
@@ -418,7 +418,7 @@ export default function CallPage() {
               
               {recordings.length === 0 && (
                 <p className="text-gray-400 text-sm text-center py-8">
-                  No recordings yet.{'\n'}Click "Start Recording" to begin.
+                  No recordings yet.{'\n'}Click &ldquo;Start Recording&rdquo; to begin.
                 </p>
               )}
             </div>

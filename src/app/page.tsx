@@ -1,4 +1,5 @@
 import AuthButton from '@/components/AuthButton'
+import Link from 'next/link'
 
 export default function Home() {
   return (
@@ -72,12 +73,12 @@ export default function Home() {
                       Join the demo room instantly to test multi-speaker recording
                     </p>
                     <div className="space-y-2">
-                      <a
+                      <Link
                         href="/call/demo-test-room"
                         className="block w-full bg-purple-600 text-white text-center py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
                       >
                         🎧 Join Demo Room
-                      </a>
+                      </Link>
                       <p className="text-xs text-purple-600">
                         Room ID: <code className="bg-purple-100 px-1 rounded">demo-test-room</code>
                       </p>
@@ -137,7 +138,7 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <a
+                <Link
                   href="/call/demo-test-room"
                   className="block p-4 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
                 >
@@ -148,7 +149,7 @@ export default function Home() {
                   <p className="text-purple-700 text-sm">
                     Join the demo room for instant multi-speaker recording test with real-time audio.
                   </p>
-                </a>
+                </Link>
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
