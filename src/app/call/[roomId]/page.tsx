@@ -26,36 +26,7 @@ export default function CallPage() {
   
   const supabase = createClient()
 
-  const fetchRoom = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('id', roomId)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // Room not found, check if it's the demo room and create it
-          if (roomId === 'demo-test-room' && user) {
-            await createDemoRoom()
-          } else {
-            setError('Room not found')
-          }
-        } else {
-          throw error
-        }
-        return
-      }
-      
-      setRoom(data)
-    } catch (error) {
-      console.error('Error fetching room:', error)
-      setError('Failed to load room')
-    }
-  }
-
-  const createDemoRoom = async () => {
+  const createDemoRoom = useCallback(async () => {
     if (!user) return
     
     try {
@@ -88,7 +59,36 @@ export default function CallPage() {
       console.error('Error creating demo room:', error)
       setError('Failed to create demo room')
     }
-  }, [roomId, user, supabase])
+  }, [user, supabase])
+
+  const fetchRoom = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Room not found, check if it's the demo room and create it
+          if (roomId === 'demo-test-room' && user) {
+            await createDemoRoom()
+          } else {
+            setError('Room not found')
+          }
+        } else {
+          throw error
+        }
+        return
+      }
+      
+      setRoom(data)
+    } catch (error) {
+      console.error('Error fetching room:', error)
+      setError('Failed to load room')
+    }
+  }, [roomId, user, supabase, createDemoRoom])
 
   const fetchParticipants = useCallback(async () => {
     try {

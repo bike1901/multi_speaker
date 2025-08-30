@@ -43,8 +43,7 @@ function ParticipantView() {
           {tracks.map((track) => (
             <div key={track.participant.sid} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
               <ParticipantTile
-                participant={track.participant}
-                source={track.source}
+                {...track}
                 className="h-full w-full"
               />
             </div>
@@ -148,23 +147,9 @@ export default function LiveKitRoom({ token, roomName, onParticipantConnected }:
     )
   }
 
-  const handleRoomConnected = (room: Room) => {
-    console.log('Connected to room:', room.name)
+  const handleRoomConnected = () => {
+    console.log('Connected to room')
     setIsConnected(true)
-
-    // Notify parent component about participants
-    if (onParticipantConnected) {
-      onParticipantConnected(room.localParticipant.identity)
-      
-      room.remoteParticipants.forEach((participant) => {
-        onParticipantConnected(participant.identity)
-      })
-
-      room.on(RoomEvent.ParticipantConnected, (participant) => {
-        console.log('Participant connected:', participant.identity)
-        onParticipantConnected(participant.identity)
-      })
-    }
   }
 
   const handleRoomDisconnected = () => {
