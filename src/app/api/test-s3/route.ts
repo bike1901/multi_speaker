@@ -1,5 +1,5 @@
 import { S3Client, ListBucketsCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 const s3Client = new S3Client({
   forcePathStyle: true,
@@ -11,11 +11,21 @@ const s3Client = new S3Client({
   },
 })
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const testResults = {
+    const testResults: {
+      timestamp: string;
+      tests: Record<string, {
+        success: boolean;
+        [key: string]: unknown;
+      }>;
+      overall?: {
+        success: boolean;
+        message: string;
+      };
+    } = {
       timestamp: new Date().toISOString(),
-      tests: {} as any
+      tests: {}
     }
 
     // Test 1: List buckets
@@ -26,10 +36,10 @@ export async function POST(request: NextRequest) {
         bucketCount: listBuckets.Buckets?.length || 0,
         buckets: listBuckets.Buckets?.map(b => b.Name) || []
       }
-    } catch (error: any) {
+    } catch (error) {
       testResults.tests.listBuckets = {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
 
@@ -62,10 +72,10 @@ export async function POST(request: NextRequest) {
           success: true,
           contentMatch: downloadedContent === testContent
         }
-      } catch (error: any) {
+      } catch (error) {
         testResults.tests.download = {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Unknown error'
         }
       }
 
@@ -79,22 +89,22 @@ export async function POST(request: NextRequest) {
         testResults.tests.delete = {
           success: true
         }
-      } catch (error: any) {
+      } catch (error) {
         testResults.tests.delete = {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Unknown error'
         }
       }
 
-    } catch (error: any) {
+    } catch (error) {
       testResults.tests.upload = {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
 
     // Overall success check
-    const allTestsPassed = Object.values(testResults.tests).every((test: any) => test.success)
+    const allTestsPassed = Object.values(testResults.tests).every(test => test.success)
     testResults.overall = {
       success: allTestsPassed,
       message: allTestsPassed 
@@ -103,10 +113,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(testResults)
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       message: 'Failed to initialize S3 client. Check your environment variables.'
     }, { status: 500 })
   }
