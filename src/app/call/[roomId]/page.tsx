@@ -122,6 +122,12 @@ export default function CallPage() {
 
   const generateToken = useCallback(async (user: User) => {
     try {
+      console.log('Generating token for:', {
+        roomId,
+        identity: user.id,
+        participantName: user.user_metadata?.full_name || user.email || 'Anonymous'
+      })
+
       const { data, error } = await supabase.functions.invoke('livekit-token', {
         body: {
           roomId: roomId,
@@ -130,13 +136,26 @@ export default function CallPage() {
         }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Edge Function error details:', {
+          error,
+          message: error.message,
+          context: error.context,
+          details: error.details
+        })
+        throw error
+      }
+      
       if (data?.token) {
+        console.log('Token generated successfully')
         setToken(data.token)
+      } else {
+        console.error('No token in response:', data)
+        throw new Error('No token returned from server')
       }
     } catch (error) {
       console.error('Error generating token:', error)
-      setError('Failed to generate access token')
+      setError(`Failed to generate access token: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }, [roomId, supabase])
 
