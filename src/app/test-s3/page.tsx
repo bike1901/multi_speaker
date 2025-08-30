@@ -37,8 +37,8 @@ export default function TestS3() {
 
       {result && (
         <div className="mt-4">
-          <h2 className="text-lg font-semibold mb-2">Result:</h2>
-          <pre className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
+          <h2 className="text-lg font-semibold mb-2 text-gray-900">Result:</h2>
+          <pre className="bg-gray-100 p-4 rounded overflow-auto max-h-96 text-gray-900 text-sm">
             {result}
           </pre>
         </div>
